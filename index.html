@@ -223,10 +223,23 @@
           <!-- Spreadsheet Tab configurations -->
           <div id="google-config-fields" style="display: none; background: var(--bg-primary); padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
             <div class="form-group">
-              <label for="editor-google-spreadsheet-select">Google Spreadsheet</label>
-              <select id="editor-google-spreadsheet-select" class="form-select" style="background: var(--bg-secondary);">
-                <option value="">-- Choose Spreadsheet --</option>
-              </select>
+              <div class="flex-between" style="margin-bottom: 6px;">
+                <label for="editor-google-spreadsheet-select" style="margin-bottom: 0;">Google Spreadsheet</label>
+                <button type="button" id="toggle-spreadsheet-input-btn" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; width: auto; font-weight: 500;">🔗 Paste Link/ID instead</button>
+              </div>
+              
+              <!-- Dropdown Select mode (Default) -->
+              <div id="spreadsheet-select-container">
+                <select id="editor-google-spreadsheet-select" class="form-select" style="background: var(--bg-secondary);">
+                  <option value="">-- Choose Spreadsheet --</option>
+                </select>
+              </div>
+              
+              <!-- Manual input mode (Hidden by default) -->
+              <div id="spreadsheet-input-container" style="display: none; gap: 12px; margin-top: 4px;">
+                <input type="text" id="editor-google-spreadsheet-input" class="form-input" placeholder="Paste Google Sheet Link or ID here" style="background: var(--bg-secondary);">
+                <button type="button" id="editor-fetch-tabs-btn" class="btn btn-secondary" style="width: auto; white-space: nowrap; font-size: 0.85rem;">Fetch Tabs</button>
+              </div>
             </div>
             <div class="form-group">
               <label for="editor-google-worksheet">Worksheet Tab Name</label>

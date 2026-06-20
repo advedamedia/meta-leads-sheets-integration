@@ -53,6 +53,11 @@
     googleAccountsSelect: document.getElementById('google-accounts-select'),
     googleConfigFields: document.getElementById('google-config-fields'),
     editorGoogleSpreadsheetSelect: document.getElementById('editor-google-spreadsheet-select'),
+    editorGoogleSpreadsheetInput: document.getElementById('editor-google-spreadsheet-input'),
+    editorFetchTabsBtn: document.getElementById('editor-fetch-tabs-btn'),
+    toggleSpreadsheetInputBtn: document.getElementById('toggle-spreadsheet-input-btn'),
+    spreadsheetSelectContainer: document.getElementById('spreadsheet-select-container'),
+    spreadsheetInputContainer: document.getElementById('spreadsheet-input-container'),
     editorGoogleWorksheet: document.getElementById('editor-google-worksheet'),
     mappingFieldsContainer: document.getElementById('mapping-fields-container'),
     editorAutoMatchBtn: document.getElementById('editor-auto-match-btn'),
@@ -259,7 +264,20 @@
       el.googleAccountsSelect.value = client.googleAccountId;
       el.googleConfigFields.style.display = 'block';
       fetchGoogleSpreadsheets(client.googleAccountId).then(() => {
+        el.spreadsheetSelectContainer.style.display = 'block';
+        el.spreadsheetInputContainer.style.display = 'none';
+        el.toggleSpreadsheetInputBtn.textContent = '🔗 Paste Link/ID instead';
+
         el.editorGoogleSpreadsheetSelect.value = client.googleSpreadsheetId || '';
+        el.editorGoogleSpreadsheetInput.value = client.googleSpreadsheetId || '';
+
+        // If spreadsheetId is saved but not found in the dropdown options, switch to manual input mode
+        if (client.googleSpreadsheetId && !el.editorGoogleSpreadsheetSelect.value) {
+          el.spreadsheetSelectContainer.style.display = 'none';
+          el.spreadsheetInputContainer.style.display = 'flex';
+          el.toggleSpreadsheetInputBtn.textContent = '📋 Select from List instead';
+        }
+
         if (client.googleSpreadsheetId) {
           fetchGoogleWorksheets(client.googleSpreadsheetId, client.googleAccountId).then(() => {
             el.editorGoogleWorksheet.value = client.googleWorksheetName || '';
@@ -882,6 +900,43 @@
           el.editorGoogleWorksheet.innerHTML = '<option value="">-- Choose Tab Name --</option>';
           el.editorGoogleWorksheet.disabled = true;
         }
+      }
+    });
+
+    // Toggle Spreadsheet Input mode
+    el.toggleSpreadsheetInputBtn.addEventListener('click', () => {
+      const isSelectVisible = el.spreadsheetSelectContainer.style.display !== 'none';
+      if (isSelectVisible) {
+        el.spreadsheetSelectContainer.style.display = 'none';
+        el.spreadsheetInputContainer.style.display = 'flex';
+        el.toggleSpreadsheetInputBtn.textContent = '📋 Select from List instead';
+      } else {
+        el.spreadsheetSelectContainer.style.display = 'block';
+        el.spreadsheetInputContainer.style.display = 'none';
+        el.toggleSpreadsheetInputBtn.textContent = '🔗 Paste Link/ID instead';
+      }
+    });
+
+    // Fetch tabs for manually pasted Spreadsheet Link or ID
+    el.editorFetchTabsBtn.addEventListener('click', () => {
+      const client = getActiveClient();
+      let inputVal = el.editorGoogleSpreadsheetInput.value.trim();
+      if (!inputVal) return alert('Please paste a Spreadsheet URL or ID first.');
+
+      // Extract spreadsheet ID if a full Google Sheets URL was pasted
+      let spreadsheetId = inputVal;
+      const match = inputVal.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+      if (match && match[1]) {
+        spreadsheetId = match[1];
+      }
+
+      if (client) {
+        client.googleSpreadsheetId = spreadsheetId;
+        client.googleSpreadsheetName = 'Manual Input Sheet';
+        saveWorkflow(client);
+        fetchGoogleWorksheets(spreadsheetId, client.googleAccountId).then(() => {
+          el.editorGoogleWorksheet.disabled = false;
+        });
       }
     });
 
