@@ -79,7 +79,9 @@
     modalPabblyLoginContent: document.getElementById('modal-pabbly-login-content'),
     modalSpinnerContent: document.getElementById('modal-spinner-content'),
     modalPabblyLoginBtn: document.getElementById('modal-pabbly-login-btn'),
-    modalCancelBtn: document.getElementById('modal-cancel-btn')
+    modalCancelBtn: document.getElementById('modal-cancel-btn'),
+    codeServerDisplay: document.getElementById('code-server-display'),
+    codeSheetsDisplay: document.getElementById('code-sheets-display')
   };
 
   // 1. Backend API Helpers
@@ -141,11 +143,14 @@
   }
 
   function populateAccountsDropdowns() {
+    const metaAccounts = (state.accounts && state.accounts.meta) || [];
+    const googleAccounts = (state.accounts && state.accounts.google) || [];
+
     el.metaAccountsSelect.innerHTML = '<option value="">-- Choose Logged Connection --</option>' +
-      state.accounts.meta.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+      metaAccounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
 
     el.googleAccountsSelect.innerHTML = '<option value="">-- Choose Logged Connection --</option>' +
-      state.accounts.google.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+      googleAccounts.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
   }
 
   // 2. Workflows Dashboard list view
@@ -245,7 +250,7 @@
     } else {
       el.metaConnNew.checked = true;
       toggleMetaConnFields('new');
-      el.metaNewConnectionName.value = `Facebook Lead Ads #${state.accounts.meta.length + 1}`;
+      el.metaNewConnectionName.value = `Facebook Lead Ads #${((state.accounts && state.accounts.meta) || []).length + 1}`;
       el.metaConfigFields.style.display = 'none';
     }
 
@@ -267,7 +272,7 @@
     } else {
       el.googleConnNew.checked = true;
       toggleGoogleConnFields('new');
-      el.googleNewConnectionName.value = `Google Sheets #${state.accounts.google.length + 1}`;
+      el.googleNewConnectionName.value = `Google Sheets #${((state.accounts && state.accounts.google) || []).length + 1}`;
       el.googleConfigFields.style.display = 'none';
     }
 
