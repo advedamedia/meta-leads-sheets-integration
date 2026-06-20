@@ -12,6 +12,7 @@ const { appendOrUpdateLead, getClientConfigsFromMasterSheet } = require('./sheet
 
 const app = express();
 app.use(express.json());
+app.enable('trust proxy');
 
 // Serve static frontend files (dashboard simulator) at the root URL
 app.use(express.static(path.join(__dirname, '../')));
@@ -322,7 +323,8 @@ app.post('/api/accounts', (req, res) => {
 // Google OAuth
 app.get('/auth/google', (req, res) => {
   const clientId = req.query.clientId || process.env.GOOGLE_CLIENT_ID || '1011300378975-5ppk09s3h8bbqsg0kdmoe12kqpq31755.apps.googleusercontent.com';
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `http://localhost:${PORT}/auth/google/callback`;
+  const dynamicRedirect = `${req.protocol}://${req.get('host')}/auth/google/callback`;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || dynamicRedirect;
   const clientSecret = req.query.clientSecret || process.env.GOOGLE_CLIENT_SECRET || '';
 
   // Store temporary params in cookie or session if needed, but for simplicity on localhost we pass state
@@ -341,7 +343,8 @@ app.get('/auth/google/callback', async (req, res) => {
   try {
     let clientId = process.env.GOOGLE_CLIENT_ID || '1011300378975-5ppk09s3h8bbqsg0kdmoe12kqpq31755.apps.googleusercontent.com';
     let clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
-    let redirectUri = process.env.GOOGLE_REDIRECT_URI || `http://localhost:${PORT}/auth/google/callback`;
+    const dynamicRedirect = `${req.protocol}://${req.get('host')}/auth/google/callback`;
+    let redirectUri = process.env.GOOGLE_REDIRECT_URI || dynamicRedirect;
 
     if (state) {
       try {
@@ -409,7 +412,8 @@ app.get('/auth/google/callback', async (req, res) => {
 // Facebook OAuth
 app.get('/auth/facebook', (req, res) => {
   const clientId = req.query.clientId || process.env.FB_APP_ID || '652209868906131';
-  const redirectUri = process.env.FB_REDIRECT_URI || `http://localhost:${PORT}/auth/facebook/callback`;
+  const dynamicRedirect = `${req.protocol}://${req.get('host')}/auth/facebook/callback`;
+  const redirectUri = process.env.FB_REDIRECT_URI || dynamicRedirect;
   const clientSecret = req.query.clientSecret || process.env.FB_APP_SECRET || '';
 
   const stateObj = { clientId, clientSecret, redirectUri };
@@ -427,7 +431,8 @@ app.get('/auth/facebook/callback', async (req, res) => {
   try {
     let clientId = process.env.FB_APP_ID || '652209868906131';
     let clientSecret = process.env.FB_APP_SECRET || '';
-    let redirectUri = process.env.FB_REDIRECT_URI || `http://localhost:${PORT}/auth/facebook/callback`;
+    const dynamicRedirect = `${req.protocol}://${req.get('host')}/auth/facebook/callback`;
+    let redirectUri = process.env.FB_REDIRECT_URI || dynamicRedirect;
 
     if (state) {
       try {
