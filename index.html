@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automation Bridge | Connect Meta Lead Ads to Google Sheets</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Pabbly OAuth Login Dialog Popup Overlay -->
+  <div id="oauth-modal" class="modal-overlay">
+    <div class="modal-window" style="width: 440px; background: white; color: #333; padding: 32px; border-radius: var(--radius-lg);">
+      <!-- Pabbly Login Layout -->
+      <div id="modal-pabbly-login-content">
+        <h2 style="font-size: 1.4rem; font-weight: 700; color: #1e293b; margin-bottom: 4px;" id="pabbly-modal-title">Login to Pabbly Account</h2>
+        <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 24px;">Login in seconds. No credit card required.</p>
+        
+        <!-- Google Login -->
+        <button id="modal-pabbly-google-btn" class="btn" style="width: 100%; border: 1.5px solid #cbd5e1; background: white; color: #334155; padding: 12px; font-weight: 600; font-size: 0.95rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; margin-bottom: 20px;">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path d="M21.35 11.1H12v2.7h5.3c-.22 1.22-.9 2.24-1.92 2.92v2.42h3.1c1.82-1.68 2.87-4.16 2.87-7.04 0-.58-.05-1.14-.15-1.6z" fill="#4285F4"/><path d="M12 21c2.43 0 4.47-.8 5.96-2.2l-3.1-2.42c-.86.58-1.96.92-2.86.92-2.2 0-4.07-1.48-4.73-3.48H4.1v2.5C5.58 19.3 8.57 21 12 21z" fill="#34A853"/><path d="M7.27 13.82c-.17-.5-.27-1.04-.27-1.6s.1-1.1.27-1.6V8.12H4.1c-.58 1.16-.92 2.47-.92 3.88s.34 2.72.92 3.88l3.17-2.48z" fill="#FBBC05"/><path d="M12 6.78c1.32 0 2.5.45 3.44 1.35l2.58-2.58C16.46 4.02 14.43 3.2 12 3.2c-3.43 0-6.42 1.7-7.9 4.92l3.17 2.48c.66-2 2.53-3.48 4.73-3.48z" fill="#EA4335"/></svg>
+          Login with Google
+        </button>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 20px; font-size: 0.8rem; text-align: left;">
+          <strong style="color: #1e293b; display: block; margin-bottom: 8px;">🔑 Custom App Credentials (Localhost OAuth)</strong>
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label style="color: #475569; font-size: 0.75rem; font-weight: 600; margin-bottom: 4px; display: block;">Client / App ID</label>
+            <input type="text" id="modal-oauth-client-id" class="form-input" style="padding: 8px; width: 100%; border-radius: 4px; border: 1.5px solid #cbd5e1; background: white; font-size: 0.75rem;" placeholder="Paste Google Client ID or Meta App ID">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="color: #475569; font-size: 0.75rem; font-weight: 600; margin-bottom: 4px; display: block;">Client Secret</label>
+            <input type="password" id="modal-oauth-client-secret" class="form-input" style="padding: 8px; width: 100%; border-radius: 4px; border: 1.5px solid #cbd5e1; background: white; font-size: 0.75rem;" placeholder="Paste secret key">
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; text-align: center; color: #94a3b8; font-size: 0.8rem; margin-bottom: 20px;">
+          <div style="flex-grow: 1; height: 1px; background: #e2e8f0;"></div>
+          <span style="padding: 0 10px;">or</span>
+          <div style="flex-grow: 1; height: 1px; background: #e2e8f0;"></div>
+        </div>
+
+        <div class="form-group" style="text-align: left; margin-bottom: 16px;">
+          <label style="color: #475569; font-size: 0.8rem; font-weight: 600; margin-bottom: 6px; display: block;">Email Address</label>
+          <input type="text" id="modal-pabbly-email" class="form-input" style="background: #f1f5f9; border: 1.5px solid #e2e8f0; color: #1e293b; padding: 12px; width: 100%; border-radius: 6px;" value="kumkum@advedamedia.com">
+        </div>
+
+        <div class="form-group" style="text-align: left; margin-bottom: 24px; position: relative;">
+          <label style="color: #475569; font-size: 0.8rem; font-weight: 600; margin-bottom: 6px; display: block;">Password</label>
+          <input type="password" class="form-input" style="background: #f1f5f9; border: 1.5px solid #e2e8f0; color: #1e293b; padding: 12px; width: 100%; border-radius: 6px;" value="••••••••">
+        </div>
+
+        <button id="modal-pabbly-login-btn" class="btn btn-primary" style="width: 100%; background: #007fff; color: white; padding: 14px; font-weight: 700; font-size: 0.95rem; border-radius: 6px; border: none; cursor: pointer; margin-bottom: 16px;">Login</button>
+        
+        <div style="color: #007fff; font-size: 0.85rem; font-weight: 600; cursor: pointer;">Unable to login? <span style="text-decoration: underline;">Forgot Password</span></div>
+      </div>
+
+      <!-- Loading Handshake -->
+      <div id="modal-spinner-content" style="display: none;">
+        <div class="oauth-loader" style="width: 40px; height: 40px; border: 3px solid #007fff; border-top-color: transparent; margin: 0 auto 20px;"></div>
+        <h3 style="font-weight: 700; color: #1e293b; margin-bottom: 8px;">Authenticating Connection</h3>
+        <p style="color: #64748b; font-size: 0.85rem;">Retrieving dynamic developer access tokens and profile permissions...</p>
+      </div>
+
+      <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px; display: flex; justify-content: flex-end;">
+        <button id="modal-cancel-btn" class="btn btn-secondary" style="background: #f1f5f9; color: #475569; border: none; padding: 8px 16px;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <!-- Top Header -->
+    <header>
+      <div class="brand-section">
+        <div class="brand-logo">⇅</div>
+        <div class="brand-title">
+          <h1>Automation Bridge</h1>
+          <p>Meta Lead Ads ➡️ Google Sheets Sync Pipeline</p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle Theme">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path></svg>
+        </button>
+        <button id="reset-app-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; width: auto;">Reset App</button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tab-dashboard">My Workflows</button>
+      <button class="nav-tab" id="tab-logs">History & Sync Logs</button>
+      <button class="nav-tab" id="tab-backend">Backend Code</button>
+    </div>
+
+    <!-- WORKFLOW LIST VIEW (Default Dashboard Screen) -->
+    <div id="section-dashboard-view">
+      <div class="flex-between" style="margin-bottom: 20px;">
+        <h2 style="font-size: 1.3rem; font-weight: 600;">Workflows</h2>
+        <button id="create-workflow-btn" class="btn btn-primary" style="width: auto; padding: 10px 18px;">+ Create Workflow</button>
+      </div>
+
+      <div id="workflows-container">
+        <!-- Rendered dynamically -->
+        <div style="text-align: center; color: var(--text-muted); padding: 48px; border: 1px dashed var(--border-color); border-radius: var(--radius-lg); background: var(--bg-secondary);">
+          <h3>No Workflows Configured</h3>
+          <p class="section-subtitle" style="margin-top: 8px;">Create a new workflow to link your Meta Lead Ads form to a Google Sheet.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORKFLOW EDITOR SCREEN (Pabbly Canvas style Sidebar) -->
+    <div id="section-editor-view" style="display: none; max-width: 800px; margin: 0 auto;">
+      <div class="flex-between" style="margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+        <div>
+          <button id="back-to-dashboard-btn" class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.85rem; margin-bottom: 8px;">&larr; Back to Workflows</button>
+          <h2 id="editor-workflow-title" style="font-size: 1.4rem; font-weight: 700;">New Workflow Bridge</h2>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 0.9rem; font-weight: 500; color: var(--text-secondary);">Workflow Status:</span>
+          <label class="switch">
+            <input type="checkbox" id="editor-workflow-status-toggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- General Settings (Workflow Name) -->
+      <div class="glass-card" style="margin-bottom: 24px; padding: 20px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="editor-workflow-name-input">Workflow Name</label>
+          <input type="text" id="editor-workflow-name-input" class="form-input" placeholder="e.g. Apex Gym Leads Campaign">
+        </div>
+      </div>
+
+      <!-- TRIGGER SECTION: Meta Lead Ads -->
+      <div class="editor-node-container trigger-node">
+        <div class="editor-node-header">
+          <div class="editor-node-icon meta-icon">M</div>
+          <div class="editor-node-header-text">
+            <h3>1. Trigger: Meta Lead Ads</h3>
+            <p>Runs automatically when a new lead gen form is submitted.</p>
+          </div>
+        </div>
+        
+        <div class="editor-node-body" style="background: var(--bg-secondary); border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+          <!-- Pabbly Sidebar Header Layout -->
+          <div class="pabbly-sidebar-box" style="background: var(--bg-primary); padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; border-bottom: 1.5px solid var(--border-color); padding-bottom: 16px;">
+              <div class="pabbly-sidebar-logo-circle" style="background: rgba(24, 119, 242, 0.1); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(24,119,242,0.2);">
+                <svg width="24" height="24" fill="#1877f2" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path></svg>
+              </div>
+              <div>
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">Connect Facebook Lead Ads Account</h4>
+                <p style="font-size: 0.75rem; color: var(--text-muted);">All connections are fully encrypted and secure. <span style="color: #007fff; cursor: pointer; text-decoration: underline;">View privacy policy</span></p>
+              </div>
+            </div>
+
+            <!-- Connection Toggles -->
+            <div style="display: flex; gap: 24px; margin-bottom: 16px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: var(--text-primary); font-size: 0.85rem;">
+                <input type="radio" name="meta-conn-type" id="meta-conn-new" checked style="accent-color: #007fff; transform: scale(1.1);"> Add New Connection
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: var(--text-primary); font-size: 0.85rem;">
+                <input type="radio" name="meta-conn-type" id="meta-conn-existing" style="accent-color: #007fff; transform: scale(1.1);"> Select Existing Connection
+              </label>
+            </div>
+
+            <!-- New Connection Mode -->
+            <div id="meta-new-connection-fields">
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">New Connection Name *</label>
+                <input type="text" id="meta-new-connection-name" class="form-input" value="Facebook Lead Ads #1" style="background: var(--bg-secondary);">
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Name your connection with Facebook Lead Ads</p>
+              </div>
+              <button id="editor-meta-connect-btn" class="btn" style="background: #007fff; color: white; padding: 12px 20px; font-weight: 700; border-radius: 6px; width: auto; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                🔌 Connect with Facebook Lead Ads
+              </button>
+            </div>
+
+            <!-- Select Existing Connection Mode -->
+            <div id="meta-existing-connection-fields" style="display: none;">
+              <label for="meta-accounts-select" style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">Select Connection</label>
+              <select id="meta-accounts-select" class="form-select" style="background: var(--bg-secondary);"></select>
+            </div>
+          </div>
+
+          <!-- Page & Form Configurations -->
+          <div id="meta-config-fields" style="display: none; background: var(--bg-primary); padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+            <div class="form-group">
+              <label for="editor-fb-page">Facebook Page</label>
+              <select id="editor-fb-page" class="form-select" style="background: var(--bg-secondary);"></select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="editor-lead-form">Lead Gen Form</label>
+              <select id="editor-lead-form" class="form-select" style="background: var(--bg-secondary);"></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONNECTOR LINE -->
+      <div class="editor-node-connector"></div>
+
+      <!-- ACTION SECTION: Google Sheets -->
+      <div class="editor-node-container action-node">
+        <div class="editor-node-header">
+          <div class="editor-node-icon sheets-icon">田</div>
+          <div class="editor-node-header-text">
+            <h3>2. Action: Google Sheets</h3>
+            <p>Appends Lead records automatically to spreadsheet worksheets.</p>
+          </div>
+        </div>
+
+        <div class="editor-node-body" style="background: var(--bg-secondary); border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+          <!-- Pabbly Sidebar Header Layout -->
+          <div class="pabbly-sidebar-box" style="background: var(--bg-primary); padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; border-bottom: 1.5px solid var(--border-color); padding-bottom: 16px;">
+              <div class="pabbly-sidebar-logo-circle" style="background: rgba(15, 157, 88, 0.1); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(15,157,88,0.2);">
+                <span style="font-size: 1.5rem; color: #0f9d58; font-weight: 700;">田</span>
+              </div>
+              <div>
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">Connect Google Sheets Account</h4>
+                <p style="font-size: 0.75rem; color: var(--text-muted);">All connections are fully encrypted and secure. <span style="color: #007fff; cursor: pointer; text-decoration: underline;">View privacy policy</span></p>
+              </div>
+            </div>
+
+            <!-- Connection Toggles -->
+            <div style="display: flex; gap: 24px; margin-bottom: 16px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: var(--text-primary); font-size: 0.85rem;">
+                <input type="radio" name="google-conn-type" id="google-conn-new" checked style="accent-color: #007fff; transform: scale(1.1);"> Add New Connection
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: var(--text-primary); font-size: 0.85rem;">
+                <input type="radio" name="google-conn-type" id="google-conn-existing" style="accent-color: #007fff; transform: scale(1.1);"> Select Existing Connection
+              </label>
+            </div>
+
+            <!-- New Connection Mode -->
+            <div id="google-new-connection-fields">
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">New Connection Name *</label>
+                <input type="text" id="google-new-connection-name" class="form-input" value="Google Sheets #1" style="background: var(--bg-secondary);">
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Name your connection with Google Sheets</p>
+              </div>
+              <button id="editor-google-connect-btn" class="btn" style="background: #007fff; color: white; padding: 12px 20px; font-weight: 700; border-radius: 6px; width: auto; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                🔌 Connect with Google Sheets
+              </button>
+            </div>
+
+            <!-- Select Existing Connection Mode -->
+            <div id="google-existing-connection-fields" style="display: none;">
+              <label for="google-accounts-select" style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">Select Connection</label>
+              <select id="google-accounts-select" class="form-select" style="background: var(--bg-secondary);"></select>
+            </div>
+          </div>
+
+          <!-- Spreadsheet Tab configurations -->
+          <div id="google-config-fields" style="display: none; background: var(--bg-primary); padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+            <div class="form-group">
+              <label for="editor-google-spreadsheet-input">Spreadsheet Target File (ID)</label>
+              <div style="display: flex; gap: 12px;">
+                <input type="text" id="editor-google-spreadsheet-input" class="form-input" placeholder="e.g. 1zRqW... Paste Spreadsheet ID here" style="background: var(--bg-secondary);">
+                <button id="editor-fetch-tabs-btn" class="btn btn-secondary" style="width: auto; white-space: nowrap; font-size: 0.85rem;">Fetch Worksheet Tabs</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="editor-google-worksheet">Worksheet Tab Name</label>
+              <select id="editor-google-worksheet" class="form-select" disabled style="background: var(--bg-secondary);">
+                <option value="">-- Choose Tab Name --</option>
+              </select>
+            </div>
+
+            <!-- Dynamic Mappings -->
+            <div id="mapping-fields-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 20px;">
+              <div class="flex-between" style="margin-bottom: 12px;">
+                <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">Column & Field Mapping</h4>
+                <button id="editor-auto-match-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.75rem;">Auto-Match Columns</button>
+              </div>
+              <div class="mapping-list" id="editor-mapping-list" style="margin-bottom: 20px;">
+                <!-- Generated Dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONNECTOR LINE -->
+      <div class="editor-node-connector"></div>
+
+      <!-- WORKFLOW SIMULATION & TEST STEP -->
+      <div class="editor-node-container test-node">
+        <div class="editor-node-header">
+          <div class="editor-node-icon test-icon">⚡</div>
+          <div class="editor-node-header-text">
+            <h3>3. Test & Inject Integration</h3>
+            <p>Simulate sending a webhook request lead to verify data formatting.</p>
+          </div>
+        </div>
+
+        <div class="editor-node-body" id="editor-test-section" style="display: none; background: var(--bg-secondary); border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+          <div style="background: var(--bg-primary); padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+            <p class="section-subtitle" style="margin-bottom: 16px;">Below is sample values generated from the leadgen form. Edit values to test duplicates or custom names.</p>
+            
+            <div class="simulator-form-grid" id="editor-test-inputs" style="margin-bottom: 16px;">
+              <!-- Rendered dynamically -->
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+              <button id="editor-test-send-btn" class="btn btn-primary">⚡ Send Test Lead</button>
+              <button id="editor-test-duplicate-btn" class="btn btn-secondary">♻️ Resubmit (Test Deduplication)</button>
+            </div>
+
+            <div id="editor-test-response" style="display: none; background: #05070c; padding: 12px; border-radius: var(--radius-md); font-family: monospace; font-size: 0.8rem; border: 1px solid var(--border-color); color: #86efac; max-height: 150px; overflow-y: auto;">
+              <!-- Output response -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Panel Buttons -->
+      <div style="display: flex; gap: 16px; margin-top: 32px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+        <button id="editor-save-btn" class="btn btn-primary">💾 Save & Turn On Workflow</button>
+        <button id="editor-cancel-btn" class="btn btn-secondary">Cancel</button>
+      </div>
+    </div>
+
+    <!-- LOGS HISTORY PAGE (Table View) -->
+    <div id="section-logs-content" class="glass-card" style="display: none;">
+      <div class="flex-between">
+        <div class="card-title" style="margin-bottom: 0;">Sync Execution logs</div>
+        <button id="clear-db-logs-btn" class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.8rem;">Clear All logs</button>
+      </div>
+      <p class="section-subtitle">History details of Lead webhooks synchronized to Google Sheets.</p>
+      
+      <div class="logs-table-wrapper">
+        <table class="logs-table" id="sync-history-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Workflow Name</th>
+              <th>Form Source</th>
+              <th>Lead ID</th>
+              <th>Status</th>
+              <th>Details & API Response</th>
+            </tr>
+          </thead>
+          <tbody id="sync-history-body">
+            <!-- Dynamic sync history logs -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BACKEND CODE TEMPLATES VIEW -->
+    <div id="section-backend-content" class="glass-card" style="display: none;">
+      <div class="card-title">Express Webhook Server File Configurations</div>
+      <p class="section-subtitle">Use these production modules to host your automated webhook listener cloud service.</p>
+      
+      <div style="margin-bottom: 24px;">
+        <h4 style="margin-bottom: 8px; color: var(--accent-blue);">Server Core (server.js)</h4>
+        <div class="console-log" style="max-height: 350px; height: auto;">
+          <pre style="color: #a5f3fc; font-size: 0.8rem; overflow-x: auto; white-space: pre-wrap;" id="code-server-display"></pre>
+        </div>
+      </div>
+
+      <div>
+        <h4 style="margin-bottom: 8px; color: var(--accent-blue);">Google Sheets Module (sheets-service.js)</h4>
+        <div class="console-log" style="max-height: 350px; height: auto;">
+          <pre style="color: #a5f3fc; font-size: 0.8rem; overflow-x: auto; white-space: pre-wrap;" id="code-sheets-display"></pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
