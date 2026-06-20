@@ -78,12 +78,8 @@
     pabblyModalTitle: document.getElementById('pabbly-modal-title'),
     modalPabblyLoginContent: document.getElementById('modal-pabbly-login-content'),
     modalSpinnerContent: document.getElementById('modal-spinner-content'),
-    modalPabblyEmail: document.getElementById('modal-pabbly-email'),
-    modalPabblyGoogleBtn: document.getElementById('modal-pabbly-google-btn'),
     modalPabblyLoginBtn: document.getElementById('modal-pabbly-login-btn'),
-    modalCancelBtn: document.getElementById('modal-cancel-btn'),
-    modalOauthClientId: document.getElementById('modal-oauth-client-id'),
-    modalOauthClientSecret: document.getElementById('modal-oauth-client-secret')
+    modalCancelBtn: document.getElementById('modal-cancel-btn')
   };
 
   // 1. Backend API Helpers
@@ -497,11 +493,9 @@
     el.modalSpinnerContent.style.display = 'none';
 
     if (type === 'meta') {
-      el.pabblyModalTitle.textContent = 'Login to Pabbly Account (Facebook)';
-      el.modalPabblyEmail.value = 'kumkum@advedamedia.com';
+      el.pabblyModalTitle.textContent = 'Connect Facebook Lead Ads';
     } else {
-      el.pabblyModalTitle.textContent = 'Login to Pabbly Account (Google)';
-      el.modalPabblyEmail.value = 'kumkum@advedamedia.com';
+      el.pabblyModalTitle.textContent = 'Connect Google Sheets';
     }
 
     el.oauthModal.classList.add('active');
@@ -514,12 +508,7 @@
     const left = (window.screen.width - width) / 2;
     const top = (window.screen.height - height) / 2;
     
-    let url = oauthTargetType === 'meta' ? '/auth/facebook' : '/auth/google';
-    const cid = el.modalOauthClientId.value.trim();
-    const sec = el.modalOauthClientSecret.value.trim();
-    if (cid || sec) {
-      url += `?clientId=${encodeURIComponent(cid)}&clientSecret=${encodeURIComponent(sec)}`;
-    }
+    const url = oauthTargetType === 'meta' ? '/auth/facebook' : '/auth/google';
     
     window.open(url, `${oauthTargetType.toUpperCase()}_OAuth`, `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes,scrollbars=yes`);
     el.oauthModal.classList.remove('active');
@@ -791,8 +780,7 @@
     el.editorMetaConnectBtn.addEventListener('click', () => triggerPabblyModal('meta'));
     el.editorGoogleConnectBtn.addEventListener('click', () => triggerPabblyModal('google'));
 
-    // Pabbly Modal login button actions redirecting to actual OAuth
-    el.modalPabblyGoogleBtn.addEventListener('click', () => startActualOAuthRedirect());
+    // Modal login button actions redirecting to actual OAuth
     el.modalPabblyLoginBtn.addEventListener('click', () => startActualOAuthRedirect());
     el.modalCancelBtn.addEventListener('click', () => el.oauthModal.classList.remove('active'));
 
