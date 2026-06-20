@@ -652,7 +652,10 @@ function getDriveService(credentials) {
 // Get Spreadsheets list
 app.post('/api/google/sheets/list', async (req, res) => {
   const { accountId } = req.body;
-  if (!accountId) return res.status(400).json({ error: 'Missing account ID.' });
+  if (!accountId) {
+    console.error('[Drive API Error] Missing account ID in request body');
+    return res.status(400).json({ error: 'Missing account ID.' });
+  }
 
   if (accountId.startsWith('simulated_') || accountId.includes('MOCK')) {
     return res.json([
@@ -665,7 +668,13 @@ app.post('/api/google/sheets/list', async (req, res) => {
   try {
     const config = readConfigs();
     const acc = config.accounts.google.find(g => g.id === accountId);
-    if (!acc) return res.status(404).json({ error: 'Selected Google Account credentials not found.' });
+    if (!acc) {
+      console.error('[Drive API Error] Selected account not found:', accountId);
+      return res.status(404).json({ error: 'Selected Google Account credentials not found.' });
+    }
+
+    console.log('[Drive API] Fetching spreadsheets for account:', acc.id, 'Name:', acc.name);
+    console.log('[Drive API] Credentials type:', acc.credentials?.type);
 
     const drive = getDriveService(acc.credentials);
     const response = await drive.files.list({
@@ -675,9 +684,15 @@ app.post('/api/google/sheets/list', async (req, res) => {
       orderBy: 'name'
     });
 
-    res.json(response.data.files || []);
+    const files = response.data.files || [];
+    console.log('[Drive API Success] Total spreadsheets found:', files.length);
+    res.json(files);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[Drive API Error Details]', err);
+    res.status(500).json({ 
+      error: err.message, 
+      details: err.response?.data || 'No additional details' 
+    });
   }
 });
 
