@@ -59,6 +59,15 @@
     spreadsheetSelectContainer: document.getElementById('spreadsheet-select-container'),
     spreadsheetInputContainer: document.getElementById('spreadsheet-input-container'),
     editorGoogleWorksheet: document.getElementById('editor-google-worksheet'),
+    toggleWorksheetInputBtn: document.getElementById('toggle-worksheet-input-btn'),
+    worksheetSelectContainer: document.getElementById('worksheet-select-container'),
+    worksheetInputContainer: document.getElementById('worksheet-input-container'),
+    editorGoogleWorksheetInput: document.getElementById('editor-google-worksheet-input'),
+    editorSaveTabManualBtn: document.getElementById('editor-save-tab-manual-btn'),
+    toggleColumnsInputBtn: document.getElementById('toggle-columns-input-btn'),
+    columnsInputContainer: document.getElementById('columns-input-container'),
+    editorManualColumnsInput: document.getElementById('editor-manual-columns-input'),
+    editorSaveColumnsManualBtn: document.getElementById('editor-save-columns-manual-btn'),
     mappingFieldsContainer: document.getElementById('mapping-fields-container'),
     editorAutoMatchBtn: document.getElementById('editor-auto-match-btn'),
     editorMappingList: document.getElementById('editor-mapping-list'),
@@ -959,6 +968,74 @@
         if (client.googleWorksheetName) {
           fetchGoogleHeaders(client.googleSpreadsheetId, client.googleWorksheetName, client.googleAccountId);
         }
+      }
+    });
+
+    // Toggle manual worksheet name input mode
+    el.toggleWorksheetInputBtn.addEventListener('click', () => {
+      const isSelectVisible = el.worksheetSelectContainer.style.display !== 'none';
+      if (isSelectVisible) {
+        el.worksheetSelectContainer.style.display = 'none';
+        el.worksheetInputContainer.style.display = 'flex';
+        el.toggleWorksheetInputBtn.textContent = '📋 Select from List instead';
+      } else {
+        el.worksheetSelectContainer.style.display = 'block';
+        el.worksheetInputContainer.style.display = 'none';
+        el.toggleWorksheetInputBtn.textContent = '🔗 Type Tab Name manually';
+      }
+    });
+
+    // Save manually entered worksheet tab name
+    el.editorSaveTabManualBtn.addEventListener('click', () => {
+      const client = getActiveClient();
+      const tabVal = el.editorGoogleWorksheetInput.value.trim();
+      if (!tabVal) return alert('Please enter a Tab Name first.');
+
+      if (client) {
+        client.googleWorksheetName = tabVal;
+        saveWorkflow(client);
+        if (client.googleSpreadsheetId) {
+          fetchGoogleWorksheets(client.googleSpreadsheetId, client.googleAccountId).then(() => {
+            fetchGoogleHeaders(client.googleSpreadsheetId, tabVal, client.googleAccountId);
+          }).catch(() => {
+            // If API fails to fetch, still check headers or fallback
+            fetchGoogleHeaders(client.googleSpreadsheetId, tabVal, client.googleAccountId);
+          });
+        } else {
+          alert(`Saved tab: "${tabVal}". Please make sure to connect a spreadsheet link so columns can be loaded!`);
+        }
+      }
+    });
+
+    // Toggle manual columns names input mode
+    el.toggleColumnsInputBtn.addEventListener('click', () => {
+      const isInputVisible = el.columnsInputContainer.style.display === 'flex';
+      if (isInputVisible) {
+        el.columnsInputContainer.style.display = 'none';
+      } else {
+        el.columnsInputContainer.style.display = 'flex';
+        const client = getActiveClient();
+        if (client && client.sheetHeaders && client.sheetHeaders.length > 0) {
+          el.editorManualColumnsInput.value = client.sheetHeaders.join(', ');
+        }
+      }
+    });
+
+    // Save manually entered column names
+    el.editorSaveColumnsManualBtn.addEventListener('click', () => {
+      const client = getActiveClient();
+      const colsVal = el.editorManualColumnsInput.value.trim();
+      if (!colsVal) return alert('Please enter some comma-separated column names.');
+
+      const headers = colsVal.split(',').map(h => h.trim()).filter(h => h.length > 0);
+      if (headers.length === 0) return alert('No valid column names found.');
+
+      if (client) {
+        client.sheetHeaders = headers;
+        saveWorkflow(client);
+        checkRenderMappingNode();
+        el.columnsInputContainer.style.display = 'none';
+        alert(`Successfully defined ${headers.length} columns manually! You can now map fields below.`);
       }
     });
 
