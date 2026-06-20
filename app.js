@@ -52,8 +52,7 @@
     editorGoogleConnectBtn: document.getElementById('editor-google-connect-btn'),
     googleAccountsSelect: document.getElementById('google-accounts-select'),
     googleConfigFields: document.getElementById('google-config-fields'),
-    editorGoogleSpreadsheetInput: document.getElementById('editor-google-spreadsheet-input'),
-    editorFetchTabsBtn: document.getElementById('editor-fetch-tabs-btn'),
+    editorGoogleSpreadsheetSelect: document.getElementById('editor-google-spreadsheet-select'),
     editorGoogleWorksheet: document.getElementById('editor-google-worksheet'),
     mappingFieldsContainer: document.getElementById('mapping-fields-container'),
     editorAutoMatchBtn: document.getElementById('editor-auto-match-btn'),
@@ -259,16 +258,18 @@
       toggleGoogleConnFields('existing');
       el.googleAccountsSelect.value = client.googleAccountId;
       el.googleConfigFields.style.display = 'block';
-      el.editorGoogleSpreadsheetInput.value = client.googleSpreadsheetId || '';
-      if (client.googleSpreadsheetId) {
-        fetchGoogleWorksheets(client.googleSpreadsheetId, client.googleAccountId).then(() => {
-          el.editorGoogleWorksheet.value = client.googleWorksheetName || '';
-          el.editorGoogleWorksheet.disabled = false;
-          if (client.googleWorksheetName) {
-            fetchGoogleHeaders(client.googleSpreadsheetId, client.googleWorksheetName, client.googleAccountId);
-          }
-        });
-      }
+      fetchGoogleSpreadsheets(client.googleAccountId).then(() => {
+        el.editorGoogleSpreadsheetSelect.value = client.googleSpreadsheetId || '';
+        if (client.googleSpreadsheetId) {
+          fetchGoogleWorksheets(client.googleSpreadsheetId, client.googleAccountId).then(() => {
+            el.editorGoogleWorksheet.value = client.googleWorksheetName || '';
+            el.editorGoogleWorksheet.disabled = false;
+            if (client.googleWorksheetName) {
+              fetchGoogleHeaders(client.googleSpreadsheetId, client.googleWorksheetName, client.googleAccountId);
+            }
+          });
+        }
+      });
     } else {
       el.googleConnNew.checked = true;
       toggleGoogleConnFields('new');
@@ -349,6 +350,21 @@
       }
     } catch (e) {
       console.error('Failed fetching fields.');
+    }
+  async function fetchGoogleSpreadsheets(accountId) {
+    try {
+      const response = await fetch('/api/google/sheets/list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId })
+      });
+      if (response.ok) {
+        const files = await response.json();
+        el.editorGoogleSpreadsheetSelect.innerHTML = '<option value="">-- Choose Spreadsheet --</option>' +
+          files.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+      }
+    } catch (e) {
+      console.error('Failed fetching spreadsheets list.', e);
     }
   }
 
@@ -811,6 +827,7 @@
         saveWorkflow(client);
         if (client.googleAccountId) {
           el.googleConfigFields.style.display = 'block';
+          fetchGoogleSpreadsheets(client.googleAccountId);
         } else {
           el.googleConfigFields.style.display = 'none';
         }
@@ -843,16 +860,22 @@
       }
     });
 
-    // Spreadsheet fetch tabs
-    el.editorFetchTabsBtn.addEventListener('click', () => {
+    // Spreadsheet selection change - fetch worksheets/tabs dynamically
+    el.editorGoogleSpreadsheetSelect.addEventListener('change', () => {
       const client = getActiveClient();
-      const spreadsheetId = el.editorGoogleSpreadsheetInput.value;
-      if (client && spreadsheetId) {
+      const spreadsheetId = el.editorGoogleSpreadsheetSelect.value;
+      if (client) {
         client.googleSpreadsheetId = spreadsheetId;
+        client.googleSpreadsheetName = el.editorGoogleSpreadsheetSelect.options[el.editorGoogleSpreadsheetSelect.selectedIndex].text;
         saveWorkflow(client);
-        fetchGoogleWorksheets(spreadsheetId, client.googleAccountId).then(() => {
-          el.editorGoogleWorksheet.disabled = false;
-        });
+        if (spreadsheetId) {
+          fetchGoogleWorksheets(spreadsheetId, client.googleAccountId).then(() => {
+            el.editorGoogleWorksheet.disabled = false;
+          });
+        } else {
+          el.editorGoogleWorksheet.innerHTML = '<option value="">-- Choose Tab Name --</option>';
+          el.editorGoogleWorksheet.disabled = true;
+        }
       }
     });
 

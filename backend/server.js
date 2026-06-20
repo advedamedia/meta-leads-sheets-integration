@@ -629,6 +629,58 @@ function getSheetsService(credentials) {
   return google.sheets({ version: 'v4', auth });
 }
 
+function getDriveService(credentials) {
+  let auth;
+  if (credentials.type === 'oauth') {
+    auth = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID || '1011300378975-5ppk09s3h8bbqsg0kdmoe12kqpq31755.apps.googleusercontent.com',
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_REDIRECT_URI
+    );
+    auth.setCredentials(credentials.tokens);
+  } else {
+    auth = new google.auth.JWT(
+      credentials.client_email,
+      null,
+      credentials.private_key.replace(/\\n/g, '\n'),
+      ['https://www.googleapis.com/auth/drive.readonly']
+    );
+  }
+  return google.drive({ version: 'v3', auth });
+}
+
+// Get Spreadsheets list
+app.post('/api/google/sheets/list', async (req, res) => {
+  const { accountId } = req.body;
+  if (!accountId) return res.status(400).json({ error: 'Missing account ID.' });
+
+  if (accountId.startsWith('simulated_') || accountId.includes('MOCK')) {
+    return res.json([
+      { id: 'simulated_sheet_leads', name: 'Apex Gym Leads Tracker' },
+      { id: 'simulated_sheet_ecom', name: 'Nova E-com Marketing Data' },
+      { id: 'simulated_sheet_realestate', name: 'NY Real Estate Form Entries' }
+    ]);
+  }
+
+  try {
+    const config = readConfigs();
+    const acc = config.accounts.google.find(g => g.id === accountId);
+    if (!acc) return res.status(404).json({ error: 'Selected Google Account credentials not found.' });
+
+    const drive = getDriveService(acc.credentials);
+    const response = await drive.files.list({
+      q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+      fields: 'files(id, name)',
+      pageSize: 100,
+      orderBy: 'name'
+    });
+
+    res.json(response.data.files || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Get Worksheet Tabs
 app.post('/api/google/sheets/tabs', async (req, res) => {
   const { spreadsheetId, accountId } = req.body;
