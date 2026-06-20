@@ -369,6 +369,8 @@
     } catch (e) {
       console.error('Failed fetching fields.');
     }
+  }
+
   async function fetchGoogleSpreadsheets(accountId) {
     try {
       const response = await fetch('/api/google/sheets/list', {
