@@ -573,6 +573,7 @@
       toggleGoogleConnFields('existing');
       el.googleAccountsSelect.value = data.accountId;
       el.googleConfigFields.style.display = 'block';
+      fetchGoogleSpreadsheets(data.accountId);
     }
   });
 
