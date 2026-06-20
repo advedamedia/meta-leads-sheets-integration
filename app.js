@@ -362,9 +362,13 @@
         const files = await response.json();
         el.editorGoogleSpreadsheetSelect.innerHTML = '<option value="">-- Choose Spreadsheet --</option>' +
           files.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+      } else {
+        const errData = await response.json();
+        alert(`Failed to load Google Spreadsheets:\n${errData.error || 'Unknown Error'}`);
       }
     } catch (e) {
       console.error('Failed fetching spreadsheets list.', e);
+      alert(`Network error fetching spreadsheets:\n${e.message}`);
     }
   }
 
