@@ -404,9 +404,13 @@
         const tabs = await response.json();
         el.editorGoogleWorksheet.innerHTML = '<option value="">-- Choose Tab --</option>' +
           tabs.map(t => `<option value="${t}">${t}</option>`).join('');
+      } else {
+        const errData = await response.json();
+        alert(`Failed to fetch Worksheet Tabs:\nError: ${errData.error || 'Unknown Error'}`);
       }
     } catch (e) {
-      console.error('Failed fetching tabs.');
+      console.error('Failed fetching tabs.', e);
+      alert(`Network error fetching worksheet tabs:\n${e.message}`);
     }
   }
 
@@ -423,9 +427,13 @@
         client.sheetHeaders = headers;
         saveWorkflow(client);
         checkRenderMappingNode();
+      } else {
+        const errData = await response.json();
+        alert(`Failed to fetch Worksheet Columns:\nError: ${errData.error || 'Unknown Error'}`);
       }
     } catch (e) {
-      console.error('Failed fetching headers.');
+      console.error('Failed fetching headers.', e);
+      alert(`Network error fetching columns:\n${e.message}`);
     }
   }
 
