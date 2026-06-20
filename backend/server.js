@@ -17,6 +17,10 @@ app.enable('trust proxy');
 // Serve static frontend files (dashboard simulator) at the root URL
 app.use(express.static(path.join(__dirname, '../')));
 
+app.get('/privacy-policy', (req, res) => {
+  res.sendFile(path.join(__dirname, '../privacy-policy.html'));
+});
+
 const PORT = process.env.PORT || 3000;
 const VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN || 'my_super_secure_verify_token_123';
 const CONFIG_PATH = path.join(__dirname, 'config.json');
